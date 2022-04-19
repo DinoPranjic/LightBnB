@@ -12,46 +12,37 @@ const pool = new Pool({
 
 /// Users
 
-/**
- * Get a single user from the database given their email.
- * @param {String} email The email of the user.
- * @return {Promise<{}>} A promise to the user.
- */
 const getUserWithEmail = function(email) {
-  let user;
-  for (const userId in users) {
-    user = users[userId];
-    if (user.email.toLowerCase() === email.toLowerCase()) {
-      break;
-    } else {
-      user = null;
-    }
-  }
-  return Promise.resolve(user);
-}
+  const queryString = `
+    SELECT *
+    FROM users
+    WHERE email = $1;`;
+return pool
+    .query(queryString, [email.toLowerCase()]) // makes sure all emails are lowercase
+    .then(result => result.rows[0]) // returns just one user
+};
+
 exports.getUserWithEmail = getUserWithEmail;
 
-/**
- * Get a single user from the database given their id.
- * @param {string} id The id of the user.
- * @return {Promise<{}>} A promise to the user.
- */
+
 const getUserWithId = function(id) {
-  return Promise.resolve(users[id]);
-}
+  const queryString = `
+      SELECT * FROM users
+      WHERE id = $1;`;
+  
+  return pool.query(queryString, [id]).then(res => res.rows[0]);
+};
 exports.getUserWithId = getUserWithId;
 
 
-/**
- * Add a new user to the database.
- * @param {{name: string, password: string, email: string}} user
- * @return {Promise<{}>} A promise to the user.
- */
 const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+  const queryString = `
+      INSERT INTO users
+        (name, password, email)
+      VALUES
+        ($1, $2, $3)
+      RETURNING *;`;
+  return pool.query(queryString, [user.name, user.password, user.email.toLowerCase()]).then(res => res.rows[0]);
 }
 exports.addUser = addUser;
 
@@ -77,7 +68,7 @@ exports.getAllReservations = getAllReservations;
  */
  const getAllProperties = (options, limit = 10) => {
   return pool
-    .query(`SELECT * FROM properties LIMIT $1`, [limit])
+    .query(`SELECT * FROM properties LIMIT $1;`, [limit])
     .then((result) => {
       console.log(result.rows);
       return result.rows;
