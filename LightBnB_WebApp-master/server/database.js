@@ -52,12 +52,12 @@ exports.addUser = addUser;
 const getAllReservations = function(guest_id, limit = 10) {
   const queryString = `
       SELECT
-          properties.*
-          reservations.*
+          properties.*,
+          reservations.*,
           avg(property_reviews.rating) AS average_rating
-      FROM property_reviews
-      JOIN reservations ON properties.id = property_reviews.property_id
-      JOIN properties ON properties.id = reservations.property_id
+      FROM properties
+      JOIN reservations ON properties.id = reservations.property_id
+      JOIN property_reviews ON properties.id = property_reviews.property_id
       WHERE
           reservations.guest_id = $1 AND
           reservations.end_date < now()::date
@@ -75,7 +75,7 @@ exports.getAllReservations = getAllReservations;
    let queryString = `
         SELECT properties.*, avg(property_reviews.rating) as average_rating
         FROM properties
-        JOIN property_reviews ON property.id = property.id`;
+        JOIN property_reviews ON property_reviews.property_id = properties.id`;
 
     if (options.city) {
       queryParams.push(`%${options.city}`);
@@ -110,7 +110,7 @@ exports.getAllReservations = getAllReservations;
         LIMIT $${queryParams.length};`;
 
 
-    return pool.query(queryString, queryParams).then((res) => res.rows);
+    return pool.query(queryString, queryParams).then((res) => res.rows).catch(err => {console.log(err)});
 };
 exports.getAllProperties = getAllProperties;
 
